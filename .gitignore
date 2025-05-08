@@ -1,0 +1,14 @@
+﻿.idea
+obj
+# Ignore build output
+TaskManager.WebApi/bin
+TaskManager.Domain/bin
+TaskManager.Application/bin
+TaskManager.Infrastructure/bin
+TaskManager.WebApi/obj
+TaskManager.Domain/obj
+TaskManager.Application/obj
+TaskManager.Infrastructure/obj
+
+# Ignore NuGet packages
+packages/
