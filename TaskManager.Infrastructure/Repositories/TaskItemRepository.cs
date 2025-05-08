@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using TaskManager.Domain.Common.Enums;
+using TaskManager.Domain.Common.Result;
 using TaskManager.Domain.Entities;
 using TaskManager.Domain.Repositories;
 using TaskManager.Infrastructure.Data;
@@ -14,31 +16,79 @@ public class TaskItemRepository : ITaskItemRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<TaskItem>> GetAllAsync()
-        => await _context.Tasks.Include(t => t.Assignee).ToListAsync();
-
-    public async Task<TaskItem> GetByIdAsync(Guid id)
-        => await _context.Tasks.Include(t => t.Assignee).FirstOrDefaultAsync(t => t.Id == id);
-
-    public async Task AddAsync(TaskItem task)
+    public async Task<Result<IEnumerable<TaskItem>>> GetAllAsync()
     {
-        _context.Tasks.Add(task);
-        await _context.SaveChangesAsync();
-    }
-
-    public async Task UpdateAsync(TaskItem task)
-    {
-        _context.Tasks.Update(task);
-        await _context.SaveChangesAsync();
-    }
-
-    public async Task DeleteAsync(Guid id)
-    {
-        var task = await _context.Tasks.FindAsync(id);
-        if (task != null)
+        try
         {
-            _context.Tasks.Remove(task);
+            var res = await _context.Tasks.Include(t => t.Assignee).ToListAsync();
+            return Result<IEnumerable<TaskItem>>.Ok(res);
+
+        }
+        catch (Exception e)
+        {
+            return Result<IEnumerable<TaskItem>>.Failure(Error.New("An error occurred while fetching the tasks from the database", e, KnownApplicationErrorEnum.SqlGenericError));
+        }
+    }
+
+    public async Task<Result<TaskItem?>> GetByIdAsync(int id)
+    {
+        try
+        {
+            var task = await _context.Tasks.Include(t => t.Assignee).FirstOrDefaultAsync(t => t.Id == id);
+            return Result<TaskItem?>.Ok(task);
+        }
+        catch (Exception e)
+        {
+            return Result<TaskItem?>.Failure(Error.New($"An error occurred while fetching the task: {id} from the database", e, KnownApplicationErrorEnum.SqlGenericError));
+        }
+    } 
+
+    public async Task<Result> AddAsync(TaskItem task)
+    {
+        try
+        {
+            _context.Tasks.Add(task);
             await _context.SaveChangesAsync();
+            return Result.Ok();
+        }
+        catch (Exception e)
+        {
+            return Result.Failure(Error.New("An error occurred while adding the task to the database", e, KnownApplicationErrorEnum.SqlGenericError));
+        }
+    }
+
+    public async Task<Result> UpdateAsync(TaskItem task)
+    {
+        try
+        {
+            _context.Tasks.Update(task);
+            await _context.SaveChangesAsync();
+            return Result.Ok();
+        }
+        catch (Exception e)
+        {
+            return Result.Failure(Error.New("An error occurred while updating the task to the database", e,
+                KnownApplicationErrorEnum.SqlGenericError));
+        }
+    }
+
+    public async Task<Result> DeleteAsync(int id)
+    {
+        try
+        {
+            var task = await _context.Tasks.FindAsync(id);
+            if (task is not null)
+            {
+                _context.Tasks.Remove(task);
+                await _context.SaveChangesAsync();
+            }
+
+            return Result.Ok();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure(Error.New("An error occurred while deleting the task from the database", ex,
+                KnownApplicationErrorEnum.SqlGenericError));
         }
     }
 }

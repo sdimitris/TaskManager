@@ -4,6 +4,8 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using TaskManager.Domain.Common.Enums;
+using TaskManager.Domain.Common.Result;
 using TaskManager.Domain.Entities;
 using TaskManager.Domain.Interfaces;
 using TaskManager.Domain.Repositories;
@@ -21,30 +23,53 @@ public class UserService : IUserService
         _config = config;
     }
 
-    public async Task<string> RegisterAsync(string username, string password)
+    public async Task<Result<string>> RegisterAsync(string username, string password)
     {
-        using var hmac = new HMACSHA512();
-        var user = new User
+        try
         {
-            Id = Guid.NewGuid(),
-            Username = username,
-            PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password)),
-            PasswordSalt = hmac.Key
-        };
-        await _userRepository.AddAsync(user);
-        return GenerateJwtToken(user);
+            using var hmac = new HMACSHA512();
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                Username = username,
+                PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password)),
+                PasswordSalt = hmac.Key
+            };
+            
+            await _userRepository.AddAsync(user);
+            return Result<string>.Ok(GenerateJwtToken(user));
+        }
+        catch (Exception e)
+        {
+            return Result<string>.Failure(Error.New("An error occurred while registering the user", e, KnownApplicationErrorEnum.SqlGenericError));
+        }
     }
 
-    public async Task<string> LoginAsync(string username, string password)
+    public async Task<Result<string>> LoginAsync(string username, string password)
     {
         var user = await _userRepository.GetByUsernameAsync(username);
-        if (user == null) return null;
+        if (user.IsFailure)
+        {
+            return Result<string>.Failure(user.Error);
+        }
 
-        using var hmac = new HMACSHA512(user.PasswordSalt);
-        var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
-        if (!hash.SequenceEqual(user.PasswordHash)) return null;
+        if (user.Value is null)
+        {
+            return Result<string>.Failure(Error.New("User not found", null, KnownApplicationErrorEnum.UserNotFound));
+        }
 
-        return GenerateJwtToken(user);
+        try
+        {
+            using var hmac = new HMACSHA512(user.Value.PasswordSalt);
+            var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
+            if (!hash.SequenceEqual(user.Value.PasswordHash)) return null;
+
+            return Result<string>.Ok(GenerateJwtToken(user.Value));
+        }
+        catch (Exception e)
+        {
+            return Result<string>.Failure(Error.New("An error occurred while logging in", e, KnownApplicationErrorEnum.SqlGenericError));
+        }
     }
 
     private string GenerateJwtToken(User user)

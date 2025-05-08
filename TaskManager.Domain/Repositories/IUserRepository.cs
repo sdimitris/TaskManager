@@ -1,9 +1,10 @@
-﻿using TaskManager.Domain.Entities;
+﻿using TaskManager.Domain.Common.Result;
+using TaskManager.Domain.Entities;
 
 namespace TaskManager.Domain.Repositories;
 
 public interface IUserRepository
 {
-    Task<User> GetByUsernameAsync(string username);
-    Task AddAsync(User user);
+    Task<Result<User?>> GetByUsernameAsync(string username);
+    Task<Result> AddAsync(User user);
 }

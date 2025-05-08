@@ -1,4 +1,6 @@
-﻿using TaskManager.Domain.Entities;
+﻿using TaskManager.Domain.Common.Enums;
+using TaskManager.Domain.Common.Result;
+using TaskManager.Domain.Entities;
 using TaskManager.Domain.Interfaces;
 using TaskManager.Domain.Repositories;
 
@@ -13,46 +15,80 @@ public class TaskService : ITaskService
         _taskRepository = taskRepository;
     }
 
-    public async Task<IEnumerable<TaskItem>> GetAllTasksAsync()
+    public async Task<Result<IEnumerable<TaskItem>>> GetAllTasksAsync()
     {
-        return await _taskRepository.GetAllAsync();
+        
+        var tasksResult = await _taskRepository.GetAllAsync();
+        if (tasksResult.IsFailure)
+        {
+            Result<IEnumerable<TaskItem>>.Failure(tasksResult.Error);
+        }
+        
+        return tasksResult;
     }
 
-    public async Task<TaskItem?> GetTaskByIdAsync(Guid id)
+    public async Task<Result<TaskItem>> GetTaskByIdAsync(int id)
     {
-        return await _taskRepository.GetByIdAsync(id);
+        var getTaskResult =  await _taskRepository.GetByIdAsync(id);
+        if (getTaskResult.IsFailure)
+        {
+            return Result<TaskItem>.Failure(getTaskResult.Error);
+        }
+        if (getTaskResult.Value is null)
+        {
+            return Result<TaskItem>.Failure(Error.New($"Task with id {id} not found", null, KnownApplicationErrorEnum.TaskNotFound));
+        }
+        
+        return Result<TaskItem>.Ok(getTaskResult.Value);
     }
 
-    public async Task<TaskItem> CreateTaskAsync(TaskItem task)
+    public async Task<Result<TaskItem>> CreateTaskAsync(TaskItem task)
     {
-        task.Id = Guid.NewGuid();
         task.CreatedAt = DateTime.UtcNow;
-        await _taskRepository.AddAsync(task);
-        return task;
+        var addResult = await _taskRepository.AddAsync(task);
+        if (addResult.IsFailure)
+        {
+            return Result<TaskItem>.Failure(addResult.Error);
+        }
+        
+        return Result<TaskItem>.Ok(task);
     }
 
-    public async Task<bool> UpdateTaskAsync(TaskItem task)
+    public async Task<Result> UpdateTaskAsync(TaskItem task)
     {
         var existingTask = await _taskRepository.GetByIdAsync(task.Id);
-        if (existingTask == null)
-            return false;
-
-        existingTask.Title = task.Title;
-        existingTask.Description = task.Description;
-        existingTask.Status = task.Status;
-        existingTask.AssigneeId = task.AssigneeId;
-
-        await _taskRepository.UpdateAsync(existingTask);
-        return true;
+        if (existingTask.IsFailure)
+            return Result.Failure(existingTask.Error);
+        
+        if (existingTask.Value is null)
+            return Result.Failure(Error.New($"Task with id {task.Id} not found", null, KnownApplicationErrorEnum.TaskNotFound));
+                
+        existingTask.Value.Title = task.Title;
+        existingTask.Value.Description = task.Description;
+        existingTask.Value.Status = task.Status;
+        existingTask.Value.AssigneeId = task.AssigneeId;
+        
+        var updateResult = await _taskRepository.UpdateAsync(existingTask.Value);
+        if (updateResult.IsFailure)
+            return Result.Failure(updateResult.Error);
+        
+        return Result.Ok();
     }
 
-    public async Task<bool> DeleteTaskAsync(Guid id)
+    public async Task<Result> DeleteTaskAsync(int id)
     {
         var task = await _taskRepository.GetByIdAsync(id);
-        if (task == null)
-            return false;
+        if (task.IsFailure)
+            return Result.Failure(task.Error);
+        
+        if (task.Value is null)
+            return Result.Failure(Error.New($"Task with id {id} not found", null, KnownApplicationErrorEnum.TaskNotFound));
 
-        await _taskRepository.DeleteAsync(id);
-        return true;
+        var deleteResult = await _taskRepository.DeleteAsync(id);
+        
+        if (deleteResult.IsFailure)
+            return Result.Failure(deleteResult.Error);
+        
+        return Result.Ok();
     }
 }

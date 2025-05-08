@@ -5,6 +5,6 @@ public enum KnownApplicationErrorEnum
     None = 1,
     GenericError,
     SqlGenericError,
-    CatsApiError,
-    CatNotFound
+    TaskNotFound,
+    UserNotFound
 }
