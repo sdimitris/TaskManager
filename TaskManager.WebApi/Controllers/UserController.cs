@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskManager.Domain.Common.Enums;
 using TaskManager.Domain.Interfaces;
@@ -8,7 +7,6 @@ namespace TaskManager.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize] // Requires JWT Bearer Authentication
 public class UserController : ControllerBase
 {
     private readonly ILogger<UserController> _logger;

@@ -1,5 +1,6 @@
 ﻿using TaskManager.Domain.Common.Enums;
 using TaskManager.Domain.Common.Result;
+using TaskManager.Domain.Dtos;
 using TaskManager.Domain.Entities;
 using TaskManager.Domain.Enums;
 using TaskManager.Domain.Interfaces;
@@ -18,34 +19,37 @@ public class TaskService : ITaskService
         ArgumentNullException.ThrowIfNull(_userService = userService);
     }
 
-    public async Task<Result<IEnumerable<TaskItem>>> GetAllTasksAsync()
+    public async Task<Result<IEnumerable<TaskItemDto>>> GetAllTasksAsync()
     {
         
         var tasksResult = await _taskRepository.GetAllAsync();
         if (tasksResult.IsFailure)
         {
-            Result<IEnumerable<TaskItem>>.Failure(tasksResult.Error);
+            Result<IEnumerable<TaskItemDto>>.Failure(tasksResult.Error);
         }
+
+        var mappedListToDto = tasksResult.Value.Select(MapToTaskItemDto);
         
-        return tasksResult;
+        return Result<IEnumerable<TaskItemDto>>.Ok(mappedListToDto);
     }
 
-    public async Task<Result<TaskItem>> GetTaskByIdAsync(int id)
+    public async Task<Result<TaskItemDto>> GetTaskByIdAsync(int id)
     {
         var getTaskResult =  await _taskRepository.GetByIdAsync(id);
         if (getTaskResult.IsFailure)
         {
-            return Result<TaskItem>.Failure(getTaskResult.Error);
+            return Result<TaskItemDto>.Failure(getTaskResult.Error);
         }
         if (getTaskResult.Value is null)
         {
-            return Result<TaskItem>.Failure(Error.New($"Task with id {id} not found", null, KnownApplicationErrorEnum.TaskNotFound));
+            return Result<TaskItemDto>.Failure(Error.New($"Task with id {id} not found", null, KnownApplicationErrorEnum.TaskNotFound));
         }
         
-        return Result<TaskItem>.Ok(getTaskResult.Value);
+        return Result<TaskItemDto>.Ok(new TaskItemDto() {});
+        
     }
 
-    public async Task<Result<TaskItem>> CreateTaskAsync(CreateTaskItemRequest task)
+    public async Task<Result<TaskItemDto>> CreateTaskAsync(CreateTaskItemRequest task)
     {
             
         var taskToAdd = new TaskItem
@@ -63,12 +67,12 @@ public class TaskService : ITaskService
             var assignee = await _userService.GetUserByUsername(task.AssigneeUsername);
             if (assignee.IsFailure)
             {
-                return Result<TaskItem>.FromFailure(assignee);
+                return Result<TaskItemDto>.FromFailure(assignee);
             }
 
             if (assignee.Value is null)
             {
-                return Result<TaskItem>.Failure(Error.New($"Can not assign ticket to user with {task.AssigneeUsername} becauase the user does not exist",null,KnownApplicationErrorEnum.UserNotFound));
+                return Result<TaskItemDto>.Failure(Error.New($"Can not assign ticket to user with {task.AssigneeUsername} becauase the user does not exist",null,KnownApplicationErrorEnum.UserNotFound));
             }
             
             taskToAdd.AssigneeId = assignee.Value!.Id;
@@ -78,10 +82,10 @@ public class TaskService : ITaskService
         var addResult = await _taskRepository.AddAsync(taskToAdd);
         if (addResult.IsFailure)
         {
-            return Result<TaskItem>.Failure(addResult.Error);
+            return Result<TaskItemDto>.Failure(addResult.Error);
         }
         
-        return Result<TaskItem>.Ok(taskToAdd);
+        return Result<TaskItemDto>.Ok(MapToTaskItemDto(taskToAdd));
     }
 
     public async Task<Result> UpdateTaskAsync(TaskItem task)
@@ -121,4 +125,13 @@ public class TaskService : ITaskService
         
         return Result.Ok();
     }
+
+    private TaskItemDto MapToTaskItemDto(TaskItem task) => new TaskItemDto()
+    {
+        Title = task.Title,
+        Description = task.Description,
+        AssigneeUsername = task.Assignee?.Username ?? string.Empty,
+        Status = task.Status,
+        CreatedAt = task.CreatedAt
+    };
 }

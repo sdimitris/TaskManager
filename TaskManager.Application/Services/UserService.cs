@@ -34,19 +34,19 @@ public class UserService : IUserService
         return Result<User?>.Ok(user.Value);
     }
 
-    public async Task<Result<string>> RegisterAsync(string username, string password)
+    public async Task<Result<User>> RegisterAsync(string username, string password)
     {
         try
         {
             var existingUser = await _userRepository.GetByUsernameAsync(username);
             if (existingUser.IsFailure)
             {
-                return Result<string>.Failure(existingUser.Error);
+                return Result<User>.Failure(existingUser.Error);
             }
 
             if (existingUser.Value is not null)
             {
-                return Result<string>.Failure(Error.New($"User {username} already exist",null, KnownApplicationErrorEnum.UserAlreadyExist));
+                return Result<User>.Failure(Error.New($"User {username} already exist",null, KnownApplicationErrorEnum.UserAlreadyExist));
             }
             
             using var hmac = new HMACSHA512();
@@ -58,11 +58,11 @@ public class UserService : IUserService
             };
             
             await _userRepository.AddAsync(user);
-            return Result<string>.Ok(GenerateJwtToken(user));
+            return Result<User>.Ok(user);
         }
         catch (Exception e)
         {
-            return Result<string>.Failure(Error.New("An error occurred while registering the user", e, KnownApplicationErrorEnum.SqlGenericError));
+            return Result<User>.Failure(Error.New("An error occurred while registering the user", e, KnownApplicationErrorEnum.SqlGenericError));
         }
     }
 
@@ -96,7 +96,7 @@ public class UserService : IUserService
     private string GenerateJwtToken(User user)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_config["Jwt:Key"]);
+        var key = Encoding.ASCII.GetBytes(_config.GetSection("Jwt:Key").Value!);
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(new[] { new Claim("id", user.Id.ToString()) }),
