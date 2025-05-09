@@ -6,5 +6,6 @@ public enum KnownApplicationErrorEnum
     GenericError,
     SqlGenericError,
     TaskNotFound,
-    UserNotFound
+    UserNotFound,
+    UserAlreadyExist
 }

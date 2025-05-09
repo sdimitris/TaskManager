@@ -2,6 +2,7 @@
 using TaskManager.Domain.Common.Enums;
 using TaskManager.Domain.Entities;
 using TaskManager.Domain.Interfaces;
+using TaskManager.Domain.Requests;
 
 namespace TaskManager.Controllers;
 
@@ -30,10 +31,9 @@ public class TaskController : ControllerBase
         if (result.IsFailure)
         {
             _logger.LogError(result.Error.GetError());
-            return Problem(title: result.Error.Message);
+            return Problem(title: "Something went wrong while fetching the tasks", statusCode: StatusCodes.Status400BadRequest);
         }
         
-        _logger.LogInformation("Tasks fetched successfully.");
         return Ok(result.Value);
     }
 
@@ -48,12 +48,11 @@ public class TaskController : ControllerBase
         var result = await _taskService.GetTaskByIdAsync(id);
         if (result.IsFailure)
         {
-            _logger.LogError(result.Error.GetError());
-
             if (result.Error.ApplicationError.Equals(KnownApplicationErrorEnum.TaskNotFound))
                 return Problem(title: $"Task with id {id} not found", statusCode: 404);
             
-            return Problem(title: result.Error.Message);
+            _logger.LogError(result.Error.GetError());
+            return Problem(title: $"Something went wrong while getting the task with id: {id}", statusCode: 400);
         }
         return Ok(result.Value);
     }
@@ -64,14 +63,15 @@ public class TaskController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> Create(TaskItem task)
+    public async Task<IActionResult> Create(CreateTaskItemRequest task)
     {
         var result = await _taskService.CreateTaskAsync(task);
         if (result.IsFailure)
         {
             _logger.LogError(result.Error.GetError());
-            return Problem(title: result.Error.Message);
+            return Problem(title: "Something went wrong while creating the task", statusCode: 400);
         }
+        
         _logger.LogInformation("Task created successfully.");
         return Ok(result.Value);    
     }
@@ -89,14 +89,14 @@ public class TaskController : ControllerBase
 
         var result = await _taskService.UpdateTaskAsync(task);
         if (result.IsFailure)
-        {
-            _logger.LogError(result.Error.GetError());
+        { 
             if (result.Error.ApplicationError.Equals(KnownApplicationErrorEnum.TaskNotFound))
                 return Problem(title: $"Task with id {id} not found", statusCode: 404);
             
-            return Problem(title: result.Error.Message);
+            _logger.LogError(result.Error.GetError());
+            return Problem(title: $"Something went wrong while updating the task with id {id}", statusCode: 400);
         }
-        _logger.LogInformation("Task updated successfully.");
+        
         return Ok(new { message = "Task updated successfully." });
     }
 
@@ -106,14 +106,13 @@ public class TaskController : ControllerBase
         var result = await _taskService.DeleteTaskAsync(id);
         if (result.IsFailure)
         {
-            _logger.LogError(result.Error.GetError());
             if (result.Error.ApplicationError.Equals(KnownApplicationErrorEnum.TaskNotFound))
                 return Problem(title: $"Task with id {id} not found", statusCode: 404);
             
-            return Problem(title: result.Error.Message);
+            _logger.LogError(result.Error.GetError());
+            return Problem(title: $"Something went wrong while deleting the task with id {id}", statusCode: 400);
         }
         
-        _logger.LogInformation("Task deleted successfully.");
         return Ok(new { message = "Task deleted successfully." });
     }
 }

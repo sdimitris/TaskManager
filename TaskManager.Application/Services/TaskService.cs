@@ -1,18 +1,21 @@
 ﻿using TaskManager.Domain.Common.Enums;
 using TaskManager.Domain.Common.Result;
 using TaskManager.Domain.Entities;
+using TaskManager.Domain.Enums;
 using TaskManager.Domain.Interfaces;
 using TaskManager.Domain.Repositories;
+using TaskManager.Domain.Requests;
 
 namespace TaskManager.Application.Services;
 
 public class TaskService : ITaskService
 {
     private readonly ITaskItemRepository _taskRepository;
-
-    public TaskService(ITaskItemRepository taskRepository)
+    private readonly IUserService _userService;
+    public TaskService(IUserService userService, ITaskItemRepository taskRepository)
     {
-        _taskRepository = taskRepository;
+        ArgumentNullException.ThrowIfNull(_taskRepository = taskRepository);
+        ArgumentNullException.ThrowIfNull(_userService = userService);
     }
 
     public async Task<Result<IEnumerable<TaskItem>>> GetAllTasksAsync()
@@ -42,16 +45,43 @@ public class TaskService : ITaskService
         return Result<TaskItem>.Ok(getTaskResult.Value);
     }
 
-    public async Task<Result<TaskItem>> CreateTaskAsync(TaskItem task)
+    public async Task<Result<TaskItem>> CreateTaskAsync(CreateTaskItemRequest task)
     {
-        task.CreatedAt = DateTime.UtcNow;
-        var addResult = await _taskRepository.AddAsync(task);
+            
+        var taskToAdd = new TaskItem
+        {
+            Title = task.Title,
+            Description = task.Description,
+            Status = TaskStatusEnum.Todo,
+            AssigneeId = null,
+            Assignee = null,
+            CreatedAt = DateTime.UtcNow,
+        };
+
+        if (task.AssigneeUsername is not null)
+        {
+            var assignee = await _userService.GetUserByUsername(task.AssigneeUsername);
+            if (assignee.IsFailure)
+            {
+                return Result<TaskItem>.FromFailure(assignee);
+            }
+
+            if (assignee.Value is null)
+            {
+                return Result<TaskItem>.Failure(Error.New($"Can not assign ticket to user with {task.AssigneeUsername} becauase the user does not exist",null,KnownApplicationErrorEnum.UserNotFound));
+            }
+            
+            taskToAdd.AssigneeId = assignee.Value!.Id;
+            taskToAdd.Assignee = assignee.Value;
+        }
+        
+        var addResult = await _taskRepository.AddAsync(taskToAdd);
         if (addResult.IsFailure)
         {
             return Result<TaskItem>.Failure(addResult.Error);
         }
         
-        return Result<TaskItem>.Ok(task);
+        return Result<TaskItem>.Ok(taskToAdd);
     }
 
     public async Task<Result> UpdateTaskAsync(TaskItem task)

@@ -23,14 +23,35 @@ public class UserService : IUserService
         _config = config;
     }
 
+    public async Task<Result<User?>> GetUserByUsername(string username)
+    {
+        var user = await _userRepository.GetByUsernameAsync(username);
+        if (user.IsFailure)
+        {
+            return Result<User?>.Failure(user.Error);
+        }
+
+        return Result<User?>.Ok(user.Value);
+    }
+
     public async Task<Result<string>> RegisterAsync(string username, string password)
     {
         try
         {
+            var existingUser = await _userRepository.GetByUsernameAsync(username);
+            if (existingUser.IsFailure)
+            {
+                return Result<string>.Failure(existingUser.Error);
+            }
+
+            if (existingUser.Value is not null)
+            {
+                return Result<string>.Failure(Error.New($"User {username} already exist",null, KnownApplicationErrorEnum.UserAlreadyExist));
+            }
+            
             using var hmac = new HMACSHA512();
             var user = new User
             {
-                Id = Guid.NewGuid(),
                 Username = username,
                 PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password)),
                 PasswordSalt = hmac.Key

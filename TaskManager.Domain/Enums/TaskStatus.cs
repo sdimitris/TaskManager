@@ -1,8 +1,8 @@
 ﻿namespace TaskManager.Domain.Enums;
 
-public enum TaskStatus
+public enum TaskStatusEnum
 {
-    Todo,
+    Todo = 1,
     InProgress,
     Done
 }
