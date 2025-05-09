@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using TaskManager.Domain.Common.Enums;
+using TaskManager.Domain.Common.Result;
 using TaskManager.Domain.Interfaces;
 using TaskManager.Domain.Requests;
 
@@ -18,8 +19,7 @@ public class UserController : ControllerBase
         ArgumentNullException.ThrowIfNull(_logger = logger);
     }
     
-    
-    // POST: api/User
+
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -31,13 +31,8 @@ public class UserController : ControllerBase
         var createdUserResult = await _userService.RegisterAsync(user.Username, user.Password);
         if (createdUserResult.IsFailure)
         {
-            if (createdUserResult.Error.ApplicationError.Equals(KnownApplicationErrorEnum.UserAlreadyExist))
-            {
-                return Problem(title: $"User {user.Username} already exist", statusCode: StatusCodes.Status409Conflict);
-            }
-            
-            _logger.LogError(createdUserResult.Error.GetError());
-            return Problem(title: $"Something went wrong while creating user", statusCode: StatusCodes.Status400BadRequest);
+            _logger.LogError(createdUserResult.Error.GetErrorInDetail());
+            return Problem(title: $"Something went wrong while creating user", statusCode: createdUserResult.Error.ErrorCode);
 
         }
         
@@ -56,13 +51,8 @@ public class UserController : ControllerBase
         var loginResult = await _userService.LoginAsync(loginRequest.Username, loginRequest.Password);
         if (loginResult.IsFailure)
         {
-            if (loginResult.Error.ApplicationError.Equals(KnownApplicationErrorEnum.UserNotFound))
-            {
-                return Problem(title: $"User {loginRequest.Username} not found", statusCode: StatusCodes.Status404NotFound);
-            }
-            
-            _logger.LogError(loginResult.Error.GetError());
-            return Problem(title: $"Something went wrong while logging in", statusCode: StatusCodes.Status400BadRequest);
+            _logger.LogError(loginResult.Error.GetErrorInDetail());
+            return Problem(title: $"Something went wrong while logging in", statusCode: loginResult.Error.ErrorCode);
         }
 
         return Ok(new { Token = loginResult.Value });

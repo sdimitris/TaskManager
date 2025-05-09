@@ -9,8 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpClient();
-
-
+builder.Logging.AddConsole();
 builder.Services.AddTransient<ITaskItemRepository, TaskItemRepository>();
 builder.Services.AddTransient<IUserRepository, UserRepository>();
 
@@ -41,8 +40,6 @@ builder.WebHost.ConfigureKestrel(options =>
     options.ListenAnyIP(8080); // HTTP port
 });
 
-
-builder.Services.AddLogging(loggingBuilder => loggingBuilder.AddConsole());
 
 var app = builder.Build();
 
