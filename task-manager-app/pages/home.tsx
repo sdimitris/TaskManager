@@ -9,34 +9,34 @@ export default function HomePage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<'all' | 'my'>('all'); 
-  const [username,setUsername] = useState<string>();
+  const [view, setView] = useState<'all' | 'my'>('all'); // Track the selected view
 
+  // Fetch tasks based on the selected view
   useEffect(() => {
     const token = localStorage.getItem('token');
 
     if (!token) {
-      router.replace('/');
+      router.replace('/login');
       return;
     }
 
-    const username = getUsernameFromToken(token); 
-    setUsername(username);
     const fetchData = async () => {
       try {
-        setLoading(true); // Start loading
         const allTasks: Task[] = await fetchTasks(token); // Fetch all tasks
 
         if (view === 'all') {
+          // Show all tasks if 'all' view is selected
           setTasks(allTasks);
         } else {
-          const myTasks = allTasks.filter((task) => task.assigneeUsername === username);
+          // Filter tasks by assignee username if 'my' view is selected
+          const username = getUsernameFromToken(token); // Extract username from token
+          const myTasks : Task[] = allTasks.filter(task => task.assigneeUsername === username);
           setTasks(myTasks);
         }
       } catch (err: any) {
-        setError(err.message); 
+        setError(err.message); // Handle error
       } finally {
-        setLoading(false);
+        setLoading(false); // End loading
       }
     };
 
@@ -45,14 +45,29 @@ export default function HomePage() {
 
   const getUsernameFromToken = (token: string) => {
     const decoded = JSON.parse(atob(token.split('.')[1])); // Decode JWT token
-    return decoded.username; // Return the username from the token
+    return decoded.username; // Assuming the token has a 'username' field
+  };
+
+  // Logout function to clear the token and redirect
+  const handleLogout = () => {
+    localStorage.removeItem('token'); // Remove token from localStorage
+    router.replace('/login'); // Redirect to the login page
   };
 
   return (
-    <div className="flex">
-      <Sidebar onSelect={setView} />
+    <div className="flex relative">
+      <Sidebar onSelect={setView} /> {/* Pass setView to Sidebar */}
+      
       <div className="text-black p-8 flex-1">
-        <h1 className="text-3xl font-bold mb-6">Welcome {username}</h1>
+        {/* Logout button */}
+        <button
+          onClick={handleLogout}
+          className="absolute top-4 right-4 bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600"
+        >
+          Logout
+        </button>
+
+        <h1 className="text-3xl font-bold mb-6">Welcome</h1>
 
         {loading && <p>Loading tasks...</p>}
         {error && <p className="text-red-500">{error}</p>}
@@ -70,7 +85,7 @@ export default function HomePage() {
               </thead>
               <tbody>
                 {tasks.map((task) => (
-                 <tr key={`${task.title}-${task.createdAt}`} className="border-b">
+                  <tr key={`${task.title}-${task.createdAt}`} className="border-b">
                     <td className="px-6 py-4 text-sm text-gray-800">{task.title}</td>
                     <td className="px-6 py-4 text-sm text-gray-800">{task.description}</td>
                     <td className="px-6 py-4 text-sm text-gray-800">{task.assigneeUsername}</td>
