@@ -110,7 +110,7 @@ public class TaskService : ITaskService
             {
                 return Result.Failure(Error.New(
                     $"Can not attach assignee with username {taskItem.AssigneeUsername} because does not exist", null,
-                    KnownApplicationErrorEnum.UserNotFound));
+                    KnownApplicationErrorEnum.UserNotFound, 404));
             }
 
             existingTask.Value.AssigneeId = assigneeResult.Value.Id;

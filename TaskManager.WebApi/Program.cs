@@ -15,8 +15,17 @@ builder.Services.AddTransient<IUserRepository, UserRepository>();
 
 builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddTransient<ITaskService, TaskService>();
-
-
+builder.Services.AddHttpLogging(o => { });
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowLocalhost3000", policy =>
+    {
+        policy
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowAnyOrigin();
+    });
+});
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddSwaggerGen(c =>
@@ -42,10 +51,10 @@ builder.WebHost.ConfigureKestrel(options =>
 
 
 var app = builder.Build();
-
+app.UseCors("AllowLocalhost3000");
 app.UseSwagger();
 app.UseSwaggerUI();
-
+app.UseHttpLogging();
 
 app.UseAuthorization();
 app.MapControllers();
