@@ -92,6 +92,17 @@ public class UserService : IUserService
             return Result<string>.Failure(Error.New("An error occurred while logging in", e, KnownApplicationErrorEnum.SqlGenericError));
         }
     }
+    
+    public async Task<Result<IEnumerable<User>>> GetUsers()
+    {
+        var users = await _userRepository.GetUsersAsync();
+        if (users.IsFailure)
+        {
+            return Result<IEnumerable<User>>.FromFailure(users);
+        }
+
+        return users;
+    }
 
     private string GenerateJwtToken(User user)
     {

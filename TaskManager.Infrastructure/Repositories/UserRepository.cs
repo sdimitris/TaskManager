@@ -30,6 +30,19 @@ public class UserRepository : IUserRepository
 
     }
 
+    public async Task<Result<IEnumerable<User>>> GetUsersAsync()
+    {
+        try
+        {
+            var users = await _context.Users.ToListAsync();
+            return Result<IEnumerable<User>>.Ok(users);
+        }
+        catch (Exception e)
+        {
+            return Result<IEnumerable<User>>.Failure(Error.New($"An error occurred while fetching the users from the database", e, KnownApplicationErrorEnum.SqlGenericError));
+        }
+
+    }
     public async Task<Result> AddAsync(User user)
     {
         try

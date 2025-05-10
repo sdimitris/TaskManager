@@ -57,4 +57,23 @@ public class UserController : ControllerBase
 
         return Ok(new { Token = loginResult.Value });
     }
+    
+    // POST: api/User
+    [HttpGet("/getUsers")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetUsers()
+    {
+        var usersResult = await _userService.GetUsers();
+        if (usersResult.IsFailure)
+        {
+            _logger.LogError(usersResult.Error.GetErrorInDetail());
+            return Problem(title: $"Something went wrong while getting users", statusCode: usersResult.Error.ErrorCode);
+        }
+
+        return Ok(usersResult.Value);
+    }
 }

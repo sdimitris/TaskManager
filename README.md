@@ -23,6 +23,12 @@ Microsoft SQL Server need to be installed on your machine.
 
 ```dotnet build TaskManager.sln```
 
+### Frontend Application
+
+``` npm install```
+
+```npm run dev```
+
 ## Using Docker
 
 ### Building The Application Image

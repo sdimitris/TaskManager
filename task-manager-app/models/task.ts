@@ -3,5 +3,6 @@ export type Task = {
     description: string;
     status: string;
     createdAt: string;
-    assigneeUsername: string;
+    assigneeUsername: string | null;
+    id: number;
 };

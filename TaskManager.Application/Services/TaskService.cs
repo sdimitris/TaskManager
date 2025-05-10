@@ -47,7 +47,7 @@ public class TaskService : ITaskService
                 KnownApplicationErrorEnum.TaskNotFound));
         }
 
-        return Result<TaskItemDto>.Ok(new TaskItemDto() { });
+        return Result<TaskItemDto>.Ok(MapToTaskItemDto(getTaskResult.Value));
     }
 
     public async Task<Result<TaskItemDto>> CreateTaskAsync(CreateTaskItemRequest task)
@@ -147,6 +147,7 @@ public class TaskService : ITaskService
 
     private TaskItemDto MapToTaskItemDto(TaskItem task) => new TaskItemDto()
     {
+        Id = task.Id,
         Title = task.Title,
         Description = task.Description,
         AssigneeUsername = task.Assignee?.Username ?? string.Empty,
