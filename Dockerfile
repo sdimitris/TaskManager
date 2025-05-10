@@ -1,39 +1,36 @@
-# Use the official .NET SDK image to build the application
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /app
 
-# Copy the .csproj file and restore dependencies
+RUN dotnet tool install --global dotnet-ef
+ENV PATH="${PATH}:/root/.dotnet/tools"
+
 COPY *.sln .
 COPY TaskManager.Domain/*.csproj ./TaskManager.Domain/
 COPY TaskManager.Application/*.csproj ./TaskManager.Application/
 COPY TaskManager.Infrastructure/*.csproj ./TaskManager.Infrastructure/
 COPY TaskManager.WebApi/*.csproj ./TaskManager.WebApi/
-#COPY TaskManager.Tests/*.csproj ./TaskManager.Tests/
-RUN dotnet restore
 
-# Copy the rest of the application code
+RUN dotnet restore
 COPY TaskManager.Domain/. ./TaskManager.Domain/
 COPY TaskManager.Application/. ./TaskManager.Application/
 COPY TaskManager.Infrastructure/. ./TaskManager.Infrastructure/
 COPY TaskManager.WebApi/. ./TaskManager.WebApi/
-#COPY TaskManager.Tests/. ./TaskManager.Tests/
 
+# Run migrations to ensure they are generated
+RUN dotnet ef migrations add MyMigrations --project ./TaskManager.Infrastructure --startup-project ./TaskManager.WebApi --no-build
 
-# Build the application
+# Publish the app, including the migrations and all relevant files
 RUN dotnet publish TaskManager.WebApi/TaskManager.WebApi.csproj -c Release -o out
 
-# Use the official ASP.NET Core runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
-
-# Set environment variable to ensure ASP.NET Core listens on port 8080
 ENV ASPNETCORE_URLS=http://+:8080
 
-# Copy the built application from the build stage
+# Copy the published output and migrations
 COPY --from=build /app/out .
 
-# Expose the port the application runs on
-EXPOSE 8080
+# Ensure migrations folder is included
+COPY --from=build /app/TaskManager.Infrastructure/Migrations /app/TaskManager.Infrastructure/Migrations
 
-# Run the application
+EXPOSE 8080
 ENTRYPOINT ["dotnet", "TaskManager.WebApi.dll"]

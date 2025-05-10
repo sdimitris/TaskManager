@@ -19,6 +19,10 @@ public class TaskController : ControllerBase
         ArgumentNullException.ThrowIfNull(_taskService = taskService);
     }
 
+    /// <summary>
+    /// Fetch all the tasks from the database
+    /// </summary>
+    /// <returns></returns>
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -37,6 +41,10 @@ public class TaskController : ControllerBase
         return Ok(result.Value);
     }
 
+    /// <summary>
+    /// Fetch the task with the given id
+    /// </summary>
+    /// <returns></returns>
     [HttpGet("{id:int}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -54,6 +62,10 @@ public class TaskController : ControllerBase
         return Ok(result.Value);
     }
     
+    /// <summary>
+    /// Creates a task
+    /// </summary>
+    /// <returns></returns>
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -73,6 +85,10 @@ public class TaskController : ControllerBase
         return Ok(result.Value);    
     }
 
+    /// <summary>
+    /// Updates a task
+    /// </summary>
+    /// <returns></returns>
     [HttpPut("{id:int}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -89,18 +105,5 @@ public class TaskController : ControllerBase
         }
         
         return Ok(new { message = "Task updated successfully." });
-    }
-
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
-    {
-        var result = await _taskService.DeleteTaskAsync(id);
-        if (result.IsFailure)
-        {
-            _logger.LogError(result.Error.GetErrorInDetail());
-            return Problem(result.Error.GetError(), statusCode: result.Error.ErrorCode);
-        }
-        
-        return Ok(new { message = "Task deleted successfully." });
     }
 }

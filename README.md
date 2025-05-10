@@ -1,52 +1,48 @@
 # TaskManager Interview Project
+## Design
+
+![Design](./img.png)
+
+# Running the Project (Frontend + Backend + DB)
+
+```docker-compose build```
+
+```docker-compose up```
+
+# Running the Backend Local
 
 ##  Prerequisites
-Microsoft SQL Server need to be installed on your machine.
-* Create a server with name **taskmanagerdb**
+Install dotnet sdk 8, dotnet runtime  in your local machine and dotnet-ef tool
+Be sure that you have postgres installed on your machine
 
-* Run EF Migrations
+```sudo apt-get update && sudo apt-get install -y dotnet-sdk-8.0```
 
-  ```dotnet ef migrations add YourMigrationName --project .\TaskManager.Infrastructure\ --startup-project .\TaskManager.WebApi\```
-* Apply Migrations
+```sudo apt-get install -y dotnet-runtime-8.0```
 
-  ```dotnet ef database update --project TaskManager.Infrastructure --startup-project TaskManager.WebApi```
+```dotnet tool install --global dotnet-ef```
 
-# Running the Application
+## Run Migrations
 
-## Local
+```dotnet ef migrations add YourMigrationName --project ./TaskManager.Infrastructure --startup-project ./TaskManager.WebApi```
 
 ### Running the Application Locally
+Do not forget to set the connection string in the appsettings.json file
 
-```dotnet run --project .\TaskManager.WebApi\```
+```json
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=db;Port=5432;Database=taskmanager;Username=postgres;Password=postgres"
+  },
+```
+
+```dotnet run --project .\StealAllTheCats.WebApi\```
 
 ### Building the Application Locally
 
-```dotnet build TaskManager.sln```
-
-### Frontend Application
-
-``` npm install```
-
-```npm run dev```
-
-## Using Docker
-
-### Building The Application Image
-
-```docker build -t taskmanager:latest .```
-
-### Creating an Application Container
-```docker run -d --name mssql  -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=123321' -p 1433:1433 mcr.microsoft.com/mssql/server:2022-latest ```
-
-### Creating an Application Container
-```docker run -d -p 8080:8080 taskmanager:latest```
-
-Now you will be able to navigate at http://localhost:8080/swagger/index.html
+```dotnet build StealAllTheCats.sln```
 
 
-## Running Tests
 
-```dotnet test .\TaskManager
-.Tests\TaskManager.Tests.csproj```
+# NOTES
 
-
+While the docker compose is working well I had some issues while fetching data from the UI (CORS ERROR) which I could not solve. I am not sure if it is a problem with the docker compose or the code itself. 
+I would suggest running the backend and frontend separately to avoid this issue.
