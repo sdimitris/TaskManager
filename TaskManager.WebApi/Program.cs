@@ -1,4 +1,9 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using TaskManager.Application.Services;
 using TaskManager.Domain.Interfaces;
 using TaskManager.Domain.Repositories;
@@ -26,7 +31,38 @@ builder.Services.AddCors(options =>
             .AllowAnyOrigin();
     });
 });
+
+var jwtKey = builder.Configuration["Jwt:Key"];
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = false, // If you're not validating audience, set to false
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ClockSkew = TimeSpan.Zero // Optional: make token expire exactly at 'exp' time
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                Console.WriteLine("Authentication failed: " + context.Exception.Message);
+                throw new Exception(context.Exception.Message);
+            }
+        };
+    });
+
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -42,7 +78,33 @@ builder.Services.AddSwaggerGen(c =>
             c.IncludeXmlComments(xmlPath);
         }
     }
+    
+     // Add JWT support to Swagger
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "Enter JWT token as: Bearer {your token}",
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
 });
+
 
 builder.WebHost.ConfigureKestrel(options =>
 {
@@ -55,7 +117,7 @@ app.UseCors("AllowLocalhost3000");
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseHttpLogging();
-
+app.UseAuthentication(); // This must come before UseAuthorization
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

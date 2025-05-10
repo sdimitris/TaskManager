@@ -1,12 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using TaskManager.Domain.Common.Enums;
-using TaskManager.Domain.Entities;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using TaskManager.Domain.Interfaces;
 using TaskManager.Domain.Requests;
 
 namespace TaskManager.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class TaskController : ControllerBase
 {
