@@ -53,6 +53,16 @@ export default function HomePage() {
     return decoded.username; // Assuming the token has a 'username' field
   };
 
+  const mapToStatus =  (status: number) => {
+    switch (status) {
+      case 1:
+        return "To do";
+      case 2:
+        return "In Progress";
+      case 3:
+        return "Done";
+    }
+  };
   // Logout function to clear the token and redirect
   const handleLogout = () => {
     localStorage.removeItem("token"); // Remove token from localStorage
@@ -91,7 +101,10 @@ export default function HomePage() {
                     Assignee
                   </th>
                   <th className="px-6 py-3 text-sm font-medium text-gray-600">
-                    Creation Time
+                     Creation Time
+                  </th>
+                  <th className="px-6 py-3 text-sm font-medium text-gray-600">
+                    Status
                   </th>
                   <th className="px-6 py-3 text-sm font-medium text-gray-600"></th>
                 </tr>
@@ -110,6 +123,9 @@ export default function HomePage() {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-800">
                       {task.createdAt}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-800">
+                      {mapToStatus(task.status)}
                     </td>
 
                     <Link
@@ -132,7 +148,7 @@ export default function HomePage() {
         )}
         <div className="flex gap-4 mt-4">
           <button
-            onClick={()=> router.push('tasks/create')}
+            onClick={() => router.push("tasks/create")}
             className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
           >
             Create Task
