@@ -8,8 +8,6 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: taskmanager
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
@@ -33,6 +31,3 @@ services:
 #    ports:
 #      - "3000:3000"  
 #    entrypoint: ["npm", "run", "dev"]
-    
-volumes:
-  postgres_data:
