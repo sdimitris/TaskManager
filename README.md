@@ -8,6 +8,10 @@
 ```docker-compose build```
 
 ```docker-compose up```
+```npm install && npm run dev```
+
+You will be able to navigate at localhost:3000
+
 
 # Running the Backend Local
 
