@@ -17,7 +17,7 @@ COPY TaskManager.Infrastructure/. ./TaskManager.Infrastructure/
 COPY TaskManager.WebApi/. ./TaskManager.WebApi/
 
 # Run migrations to ensure they are generated
-RUN dotnet ef migrations add MyMigrations --project ./TaskManager.Infrastructure --startup-project ./TaskManager.WebApi --no-build
+RUN dotnet ef migrations add MyMigrations --project ./TaskManager.Infrastructure --startup-project ./TaskManager.WebApi
 
 # Publish the app, including the migrations and all relevant files
 RUN dotnet publish TaskManager.WebApi/TaskManager.WebApi.csproj -c Release -o out
