@@ -36,6 +36,8 @@ export default function HomePage() {
           const myTasks: Task[] = allTasks.filter(
             (task) => task.assigneeUsername === username
           );
+          
+          console.log(username, myTasks);
           setTasks(myTasks);
         }
       } catch (err: any) {
@@ -50,7 +52,8 @@ export default function HomePage() {
 
   const getUsernameFromToken = (token: string) => {
     const decoded = JSON.parse(atob(token.split(".")[1])); // Decode JWT token
-    return decoded.username; // Assuming the token has a 'username' field
+    console.log(decoded)
+    return decoded.unique_name; // Assuming the token has a 'username' field
   };
 
   const mapToStatus =  (status: number) => {
