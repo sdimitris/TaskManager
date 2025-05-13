@@ -85,7 +85,7 @@ dotnet build TaskManager.sln
 ## Notes
 
 - API documentation is available at: [http://localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html)
-- You can create a user via the Swagger endpoint `POST /api/Users`. The frontend for this feature is not implemented due to time constraints.
+- You can create a user via the Swagger endpoint `POST /api/Users`. The frontend for this feature is not implemented due to time constraints. You can manually create a user via swagger.
 - While `docker-compose` works, you may encounter CORS errors when fetching data from the UI. This might be due to configuration issues in Docker or the code itself.  
   **Recommendation:** Run the frontend and backend separately during development.
 - Test cases were not included due to a strict 4-day deadline. I suggest using **xUnit** and **Moq** for testing.
